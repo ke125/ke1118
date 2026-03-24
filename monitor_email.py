@@ -44,11 +44,18 @@ session.timeout = 10
 def get_top_symbols():
     url = "https://fapi.binance.com/fapi/v1/ticker/24hr"
     try:
-        data = session.get(url).json()
-    except:
+        response = session.get(url)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        print(f"获取币种列表失败: {e}")
         return []
-    symbols = [item["symbol"] for item in data if item["symbol"].endswith("USDT")]
-    return list(set(symbols[:300] + list(MAIN_COINS)))
+    symbols = []
+    for item in data:
+        if isinstance(item, dict) and "symbol" in item and item["symbol"].endswith("USDT"):
+            symbols.append(item["symbol"])
+    symbols = list(set(symbols[:300] + list(MAIN_COINS)))
+    return symbols
 
 def fetch_ohlcv(sym, interval, limit):
     url = f"https://fapi.binance.com/fapi/v1/klines?symbol={sym}&interval={interval}&limit={limit}"
