@@ -1,3 +1,4 @@
+import sys
 import time
 import numpy as np
 import requests
@@ -5,9 +6,13 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 import urllib3
+
+# 强制刷新print输出，让GitHub日志实时显示
+sys.stdout = sys.__stdout__
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ===================== 配置区 =====================
+# GitHub 环境必须留空！本地PowerShell可填你的代理："192.168.2.171:7896"
 PROXY = ""
 SCAN_INTERVAL = 900  # 15分钟 = 900秒
 proxies = {"http": PROXY, "https": PROXY} if PROXY else None
@@ -35,16 +40,16 @@ def send_email(title, content):
     except Exception as e:
         print(f"❌ 邮件发送失败: {e}")
 
-# ===================== 网络请求（带超时防卡死） =====================
+# ===================== 网络请求（无代理+超时防卡死） =====================
 session = requests.Session()
 if proxies:
-    session.proxies = proxies
+    session.proxies = proxies  # 只有PROXY非空时才设置代理（GitHub里PROXY为空，所以不走代理）
 session.verify = False
-session.timeout = 10  # 全局 10 秒超时，API 没响应就跳过，不卡死
+session.timeout = 10  # 全局10秒超时，API没响应就跳过，绝不卡死
 
 def get_top_symbols():
     """
-    保持扫涨幅前 200 个币 + 主流币，加异常捕获
+    保持扫涨幅前200个币 + 主流币，加异常捕获
     """
     url = "https://fapi.binance.com/fapi/v1/ticker/24hr"
     try:
@@ -64,9 +69,10 @@ def get_top_symbols():
             except (KeyError, ValueError):
                 continue
     
-    # 排序并取前 200
+    # 按涨幅降序排序，取前200个
     symbols.sort()
     top_200 = [s for (_, s) in symbols[:200]]
+    # 合并主流币，避免遗漏
     final_symbols = list(set(top_200 + list(MAIN_COINS)))
     
     print(f"📊 本次扫描币种数: {len(final_symbols)}")
@@ -87,7 +93,7 @@ def fetch_ohlcv(sym, interval, limit):
 def ma(arr, n):
     return np.convolve(arr, np.ones(n)/n, mode="valid")[-1]
 
-# ===================== 指标与形态 =====================
+# ===================== 指标与形态（核心筛选逻辑完全不变） =====================
 def check_ma33_slope(close_series):
     ma33_series = []
     for i in range(10):
@@ -192,7 +198,7 @@ def check_cup_handle(close15, vol15, ma33, sym):
     threshold = 1.2 if sym in MAIN_COINS else 1.35
     return vol15[-1] > vol_avg*threshold
 
-# ===================== 主逻辑（加了异常捕获，单个币种失败不影响整轮） =====================
+# ===================== 主逻辑（加异常捕获，单个币种失败不影响整轮） =====================
 def analyze(sym):
     ohl4 = fetch_ohlcv(sym, "4h", 40)
     ohl1 = fetch_ohlcv(sym, "1h", 50)
@@ -226,8 +232,8 @@ def analyze(sym):
 
 def main():
     print("="*60)
-    print("📩 【防卡死版】4h+1h+15m三重共振黄金坑+杯柄")
-    print("💡 配置：15分钟扫描一次 | 扫描涨幅前200币种")
+    print("📩 【最终无代理版】4h+1h+15m三重共振黄金坑+杯柄")
+    print("💡 配置：15分钟扫描一次 | 扫描涨幅前200币种 | 无代理防卡死")
     print("电脑关机也能跑，自动发邮件")
     print("="*60)
     last = set()
