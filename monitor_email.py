@@ -9,7 +9,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ===================== 代理在GitHub上不用，留空即可 =====================
 PROXY = ""
-SCAN_INTERVAL = 300
+SCAN_INTERVAL = 900
 proxies = {"http": PROXY, "https": PROXY} if PROXY else None
 
 MAIN_COINS = {"BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "ADAUSDT", "XRPUSDT"}
