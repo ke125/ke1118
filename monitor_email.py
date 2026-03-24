@@ -49,7 +49,7 @@ session.timeout = 10  # 全局10秒超时，API没响应就跳过，绝不卡死
 
 def get_top_symbols():
     """
-    保持扫涨幅前200个币 + 主流币，加异常捕获
+    改为扫涨幅前50个币 + 主流币
     """
     url = "https://fapi.binance.com/fapi/v1/ticker/24hr"
     try:
@@ -69,11 +69,11 @@ def get_top_symbols():
             except (KeyError, ValueError):
                 continue
     
-    # 按涨幅降序排序，取前200个
+    # 按涨幅降序排序，取前50个
     symbols.sort()
-    top_200 = [s for (_, s) in symbols[:200]]
+    top_50 = [s for (_, s) in symbols[:50]]
     # 合并主流币，避免遗漏
-    final_symbols = list(set(top_200 + list(MAIN_COINS)))
+    final_symbols = list(set(top_50 + list(MAIN_COINS)))
     
     print(f"📊 本次扫描币种数: {len(final_symbols)}")
     return final_symbols
@@ -232,8 +232,8 @@ def analyze(sym):
 
 def main():
     print("="*60)
-    print("📩 【最终无代理版】4h+1h+15m三重共振黄金坑+杯柄")
-    print("💡 配置：15分钟扫描一次 | 扫描涨幅前200币种 | 无代理防卡死")
+    print("📩 【轻量化50币版】4h+1h+15m三重共振黄金坑+杯柄")
+    print("💡 配置：15分钟扫描一次 | 扫描涨幅前50币种 | 无代理防卡死")
     print("电脑关机也能跑，自动发邮件")
     print("="*60)
     last = set()
